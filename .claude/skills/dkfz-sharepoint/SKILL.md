@@ -65,6 +65,17 @@ python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \
 Prints each version with its label, creation timestamp, byte size, and author.
 The current (latest) version is prefixed with `@` (e.g. `@2.0`).
 
+### Download a specific version
+
+```bash
+python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
+  --version 1.0 \
+  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx" \
+  -o /tmp/cohesion_v1.docx
+```
+
+The `--version` flag accepts the version label shown by `--versions` (e.g. `1.0`, `2.0`).
+
 ### From Claude Code (typical agent use)
 
 Use `Bash` with the commands above. After download, use `Read` or `Bash` to inspect content. For DOCX files, extract text with:
@@ -104,8 +115,8 @@ python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx"
 # → Version    Created                        Size  Created By
 # → ---------------------------------------------------------------------------
-# → @2.0       09.06.2026 16:34          2,059,281  Kussel, Tobias
-# → 1.0        09.06.2026 16:33          2,059,281  Kussel, Tobias
+# → @2.0       09.06.2026 16:34          2,059,281  t264l@dkfz.de
+# → 1.0        09.06.2026 16:33          2,059,281  t264l@dkfz.de
 ```
 
 ## Gotchas
@@ -115,4 +126,4 @@ python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \
 - **NTLM alone isn't enough** — NTLM authenticates at the IIS level (userId=0 in SP page context) but SharePoint itself uses ADFS claims identity. You must go through the ADFS form flow.
 - **rclone `vendor=sharepoint` hits Microsoft Online** — times out on the internal network; not usable for on-prem.
 - **Realm is derived from the first hostname component**: `webcoop` → `urn:sharepoint:webcoop`, `intracoop` → `urn:sharepoint:intracoop`
-- **FedAuth cookie is session-scoped** — re-authenticate for each new Python process; no persistent cookie store.
+- **FedAuth cookie is cached to disk** — saved in `/tmp/papierkram/fedauth_<host>.json` and reused across processes. On a 403, the cache is busted and a fresh token is fetched automatically.

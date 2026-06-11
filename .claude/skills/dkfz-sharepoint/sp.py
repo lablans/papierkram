@@ -4,7 +4,7 @@ import sys; sys.dont_write_bytecode = True
 
 set_euo = None  # Python equivalent: errors exit immediately via sys.exit
 
-import sys, subprocess, os, argparse
+import sys, subprocess, os, argparse, json
 from email.utils import parsedate_to_datetime
 from dotenv import load_dotenv
 load_dotenv()
@@ -17,6 +17,7 @@ import xml.etree.ElementTree as ET
 
 ADFS_HOST = "https://feds.dkfz-heidelberg.de"
 RBW_UUID = os.environ.get("DKFZ_SP_RBW_UUID")
+CACHE_DIR = "/tmp/papierkram"
 SUPPORTED_HOSTS = {
     "webcoop",
     "webcoop.inet.dkfz-heidelberg.de",
@@ -25,14 +26,51 @@ SUPPORTED_HOSTS = {
 }
 
 
+def _cache_path(sp_host):
+    key = urlparse(sp_host).hostname.split(".")[0]
+    return os.path.join(CACHE_DIR, f"fedauth_{key}.json")
+
+
+def _load_cached_session(sp_host):
+    try:
+        with open(_cache_path(sp_host)) as f:
+            data = json.load(f)
+        sess = requests.Session()
+        sess.cookies.set("FedAuth", data["FedAuth"], domain=urlparse(sp_host).hostname, path="/")
+        return sess
+    except (FileNotFoundError, KeyError, json.JSONDecodeError):
+        return None
+
+
+def _save_session_cache(sp_host, session):
+    cookie = session.cookies.get("FedAuth")
+    if not cookie:
+        return
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    with open(_cache_path(sp_host), "w") as f:
+        json.dump({"FedAuth": cookie}, f)
+
+
+def _clear_session_cache(sp_host):
+    try:
+        os.remove(_cache_path(sp_host))
+    except FileNotFoundError:
+        pass
+
+
 def get_credentials():
     user = subprocess.check_output(["rbw", "get", RBW_UUID, "-f", "username"]).decode().strip()
     pw = subprocess.check_output(["rbw", "get", RBW_UUID, "-f", "password"]).decode().strip()
     return user, pw
 
 
-def authenticate(sp_host, username, password):
+def authenticate(sp_host, username, password, force=False):
     """Return an authenticated requests.Session with FedAuth cookie for sp_host."""
+    if not force:
+        cached = _load_cached_session(sp_host)
+        if cached:
+            return cached
+
     realm_key = urlparse(sp_host).hostname.split(".")[0]  # e.g. "webcoop"
     realm = f"urn%3asharepoint%3a{realm_key}"
     session = requests.Session()
@@ -82,7 +120,15 @@ def authenticate(sp_host, username, password):
     if "FedAuth" not in session.cookies:
         raise RuntimeError("No FedAuth cookie after _trust exchange — check SP realm config")
 
+    _save_session_cache(sp_host, session)
     return session
+
+
+def _get_session(sp_host, username, password, force=False):
+    """Return a session, busting the cache and re-authing if force=True."""
+    if force:
+        _clear_session_cache(sp_host)
+    return authenticate(sp_host, username, password, force=force)
 
 
 def sp_host_from_url(url):
@@ -93,7 +139,6 @@ def sp_host_from_url(url):
 def cmd_list(url, username, password):
     """List contents of a SharePoint directory via WebDAV PROPFIND."""
     sp_host = sp_host_from_url(url)
-    sess = authenticate(sp_host, username, password)
 
     propfind_body = (
         '<?xml version="1.0"?>'
@@ -101,11 +146,16 @@ def cmd_list(url, username, password):
         "<D:prop><D:displayname/><D:resourcetype/><D:getcontentlength/><D:getlastmodified/></D:prop>"
         "</D:propfind>"
     )
-    r = sess.request(
-        "PROPFIND", url,
-        headers={"Depth": "1", "Content-Type": "application/xml"},
-        data=propfind_body,
-    )
+    for attempt in range(2):
+        sess = _get_session(sp_host, username, password, force=(attempt > 0))
+        r = sess.request(
+            "PROPFIND", url,
+            headers={"Depth": "1", "Content-Type": "application/xml"},
+            data=propfind_body,
+        )
+        if r.status_code == 403 and attempt == 0:
+            continue
+        break
     if r.status_code != 207:
         print(f"Error: PROPFIND returned {r.status_code}", file=sys.stderr)
         sys.exit(1)
@@ -155,6 +205,7 @@ def _resolve_display_name(sess, sp_host, site_path, login):
                 return name
     except Exception:
         pass
+    # Fall back to stripping the claims prefix
     return login.replace("i:0e.t|adfs|", "").replace("i:0#.w|ad\\", "")
 
 
@@ -168,8 +219,6 @@ def cmd_versions(url, username, password):
     parts = file_rel.strip("/").split("/")
     site_path = "/" + "/".join(parts[:2]) if len(parts) >= 2 and parts[0] == "sites" else ""
 
-    sess = authenticate(sp_host, username, password)
-
     soap_url = f"{sp_host}{site_path}/_vti_bin/Versions.asmx"
     soap_body = f"""<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
@@ -181,15 +230,17 @@ def cmd_versions(url, username, password):
     </GetVersions>
   </soap:Body>
 </soap:Envelope>"""
+    headers = {
+        "Content-Type": "text/xml; charset=utf-8",
+        "SOAPAction": '"http://schemas.microsoft.com/sharepoint/soap/GetVersions"',
+    }
 
-    r = sess.post(
-        soap_url,
-        data=soap_body,
-        headers={
-            "Content-Type": "text/xml; charset=utf-8",
-            "SOAPAction": '"http://schemas.microsoft.com/sharepoint/soap/GetVersions"',
-        },
-    )
+    for attempt in range(2):
+        sess = _get_session(sp_host, username, password, force=(attempt > 0))
+        r = sess.post(soap_url, data=soap_body, headers=headers)
+        if r.status_code == 403 and attempt == 0:
+            continue
+        break
     if r.status_code != 200:
         print(f"Error: Versions.asmx returned {r.status_code}", file=sys.stderr)
         sys.exit(1)
@@ -218,12 +269,60 @@ def cmd_versions(url, username, password):
         print(f"{ver:<10} {date:<22} {int(size):>12,}  {by}" if size else f"{ver:<10} {date:<22} {'':>12}  {by}")
 
 
-def cmd_download(url, output, username, password):
-    """Download a file from SharePoint."""
+def _get_version_url(url, version_label, sess):
+    """Return the download URL for a specific version label (e.g. '1.0') of a file."""
     sp_host = sp_host_from_url(url)
-    sess = authenticate(sp_host, username, password)
+    parsed = urlparse(url)
+    file_rel = unquote(parsed.path)
+    parts = file_rel.strip("/").split("/")
+    site_path = "/" + "/".join(parts[:2]) if len(parts) >= 2 and parts[0] == "sites" else ""
 
-    r = sess.get(url, allow_redirects=True)
+    soap_url = f"{sp_host}{site_path}/_vti_bin/Versions.asmx"
+    soap_body = f"""<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Body>
+    <GetVersions xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+      <fileName>{file_rel}</fileName>
+    </GetVersions>
+  </soap:Body>
+</soap:Envelope>"""
+    r = sess.post(
+        soap_url, data=soap_body,
+        headers={"Content-Type": "text/xml; charset=utf-8",
+                 "SOAPAction": '"http://schemas.microsoft.com/sharepoint/soap/GetVersions"'},
+    )
+    if r.status_code != 200:
+        print(f"Error: Versions.asmx returned {r.status_code}", file=sys.stderr)
+        sys.exit(1)
+    ns = "http://schemas.microsoft.com/sharepoint/soap/"
+    root = ET.fromstring(r.content)
+    for elem in root.iter(f"{{{ns}}}result"):
+        ver = elem.get("version", "").lstrip("@")
+        if ver == version_label:
+            return elem.get("url")
+    return None
+
+
+def cmd_download(url, output, username, password, version_label=None):
+    """Download a file from SharePoint, optionally a specific version."""
+    sp_host = sp_host_from_url(url)
+
+    for attempt in range(2):
+        sess = _get_session(sp_host, username, password, force=(attempt > 0))
+        if version_label:
+            versioned_url = _get_version_url(url, version_label, sess)
+            if not versioned_url:
+                print(f"Error: version '{version_label}' not found", file=sys.stderr)
+                sys.exit(1)
+            download_url = versioned_url
+        else:
+            download_url = url
+        r = sess.get(download_url, allow_redirects=True)
+        if r.status_code == 403 and attempt == 0:
+            continue
+        break
     if r.status_code != 200:
         print(f"Error: {r.status_code}", file=sys.stderr)
         sys.exit(1)
@@ -253,6 +352,11 @@ def main():
         "--versions", action="store_true",
         help="Show version history of a file",
     )
+    p.add_argument(
+        "--version",
+        metavar="LABEL",
+        help="Download a specific version (e.g. 1.0); use with download mode",
+    )
     args = p.parse_args()
 
     username, password = get_credentials()
@@ -262,7 +366,7 @@ def main():
     elif args.list or args.url.endswith("/"):
         cmd_list(args.url, username, password)
     else:
-        cmd_download(args.url, args.output, username, password)
+        cmd_download(args.url, args.output, username, password, version_label=args.version)
 
 
 if __name__ == "__main__":
