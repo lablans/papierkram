@@ -61,53 +61,75 @@ If the plugin is not installed, tell the user to install it:
 
 The document-skills plugin (and sp.py) require Python packages. If a package is missing, **do not find workarounds**: Just ask the user to install the package. Don't install it yourself.
 
-## Grant Repository Layout
+## Project Repository Layout
 
 ```
-grants/
-├── README.md                        # master index table of all grants
-├── active/
-│   └── YYYY_FUNDER_ACRONYM/
-│       └── index.md
-├── submitted/
-├── funded/
-└── rejected/
+projects/
+├── README.md                        # master index table of all projects
+└── YYYY_FUNDER_ACRONYM/
+    └── index.md
 ```
 
-Folder naming: `YYYY_FUNDER_ACRONYM` (e.g. `2025_DFG_PANTR`).
+Folder naming: `YYYY_FUNDER_ACRONYM` (e.g. `2025_DFG_PANTR`). The folder never moves when status changes — status lives only in the frontmatter.
 
 ### `index.md` frontmatter convention
 
 ```yaml
 ---
+# Full official title of the project
 title: "Full Official Grant Title"
-funder: DFG                          # funding agency
-program: SPP 2306                    # call / programme
+
+# Funding agency (e.g. DFG, EC, BMBF)
+funder: DFG
+
+# Call / programme name
+program: SPP 2306
+
+# Short project name / acronym
 acronym: PANTR
-institution: DKFZ                    # DKFZ | UMM — which institution submits
-role: PI                             # PI | Co-PI | Coordinator
-status: active                       # active | submitted | funded | rejected
-submitted: ~                         # ISO date or ~ if not yet
+
+# Submitting institution (DKFZ | UMM)
+institution: DKFZ
+
+# Your role on the project (PI | Co-PI | Coordinator)
+role: PI
+
+# Lifecycle status (proposal | rejected | ongoing | finished)
+status: proposal
+
+# Date the proposal was submitted (ISO date or ~ if not yet)
+submitted: ~
+
+# Proposal submission deadline (~ if not applicable)
 deadline: 2025-11-30
-decision_expected: 2026-03-01
+
+# Funding decision date (~ if not yet known)
 decision: ~
-amount_requested: 450000             # EUR, direct costs excl. overhead
-amount_granted: ~
+
+# Direct costs requested in EUR (excl. overhead)
+amount_requested: 450000
+
+# Project duration: calendar span and runtime in months
 period: 2025–2027
+runtime_months: 24
+
+# Keywords
 tags: [pancreatic-cancer, single-cell]
+
+# SharePoint folder URL for project documents
 sharepoint_folder: https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/
 ---
 ```
 
-Fields `title`, `funder`, `program`, `amount_requested`, `period`, and the summary
+Fields `title`, `funder`, `program`, `amount_requested`, `period`, `runtime_months`, and the summary
 paragraph are auto-generated from the proposal documents. The following must be
 provided manually (not derivable from documents):
 
 - `institution` — DKFZ or UMM
 - `sharepoint_folder` — URL to the SharePoint directory
-- `role` — your role on the grant
-- `deadline`, `decision_expected` — from the call announcement
-- `status`, `decision`, `amount_granted` — updated over the grant lifecycle
+- `role` — your role on the project
+- `deadline` — from the call announcement
+- `status`, `decision` — updated over the project lifecycle
 
 ### `index.md` body convention
 
@@ -128,11 +150,40 @@ One-paragraph lay summary (auto-generated from abstract).
 ## Notes
 ```
 
+## Required Documents
+
+Every project must have specific documents on SharePoint. **Whenever you read or create a project `index.md`, run the completeness check below and emit a warning for every missing required document** — do not wait for the user to ask.
+
+### Document requirements by status and funder
+
+| Document | Required when | Keywords / naming hints |
+|---|---|---|
+| Budget table | always | "budget", "Kosten", "Finanzplan", "Kalkulation"; `.xlsx`/`.xls` extension |
+| Proposal text / Part B | always | "proposal", "Antrag", "Part_B", "PartB", "Teil_B", "full" |
+| Grants office checklist | always | "checklist", "Checkliste" |
+| Part A — applicant info | EU projects (funder: EC, EU, ERC, or similar) | "Part_A", "PartA", "Teil_A", "administrative" |
+| AZAP | once submitted (`submitted:` field is a date, not `~`) | "AZAP" |
+
+### Document location by status
+
+| Status | Expected SharePoint location |
+|---|---|
+| `proposal`, `rejected` | `sharepoint_folder` (root) |
+| `ongoing`, `finished` | `<sharepoint_folder>Management/Anträge/` |
+
+For `ongoing` and `finished` projects, the documents should physically live in the `Management/Anträge/` subfolder. When checking or listing documents, use that subfolder URL.
+
+### Warning format
+
+Emit one line per missing document, prominently placed:
+
+> ⚠️ Missing required document: **<document name>** — required because <reason (e.g. "all projects" / "EU funder" / "project is submitted")>
+
 ## Workflows
 
-### Adding a new grant proposal
+### Adding a new project
 
-Trigger: user says "add a grant", "new proposal", or similar.
+Trigger: user says "add a grant", "new proposal", "new project", or similar.
 
 **Step 1 — Collect required inputs from the user.**
 Ask for all fields that cannot be inferred from the proposal document. Ask them together in a single message, not one at a time:
@@ -140,14 +191,15 @@ Ask for all fields that cannot be inferred from the proposal document. Ask them 
 - `sharepoint_folder` — URL to the SharePoint directory containing the proposal files
 - `institution` — DKFZ or UMM
 - `role` — PI, Co-PI, or Coordinator
-- `deadline` — submission deadline (from the call announcement)
-- `decision_expected` — when the funding decision is expected (optional)
-- `status` — default `active` unless told otherwise
+- `deadline` — submission deadline (from the call announcement, ~ if not applicable)
+- `status` — default `proposal` unless told otherwise
 
 **Step 2 — Discover documents.**
 If the user provides an `AllItems.aspx?id=...` SharePoint URL, convert it to a direct path URL first: URL-decode the `id` parameter value and use that as the path (append a trailing `/`). For example, `?id=%2Fsites%2Fverbis%2Fpantr%2F2026%2FCOHESION` → `https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/`.
 
 List the SharePoint folder using `sp.py --list <sharepoint_folder>`. Identify the main proposal file (largest PDF or DOCX, or one named "proposal"/"Antrag") and the budget file (XLSX or a clearly named PDF).
+
+**Run document completeness check now** — apply the Required Documents rules to the listing. Emit a warning for every required document not found in the listing before proceeding. Do not skip this even if the document table looks complete at a glance.
 
 **Step 3 — Extract proposal text.**
 Download the main proposal document to `/tmp/` via `sp.py`. Extract its text using existing skills to read pdf and microsoft office files.
@@ -164,10 +216,10 @@ For `amount_requested`: use **direct costs only, excluding overhead/indirect cos
 Determine the folder name as `YYYY_FUNDER_ACRONYM` using the deadline year (or current year if no deadline).
 
 ```
-grants/<status>/YYYY_FUNDER_ACRONYM/index.md
+projects/YYYY_FUNDER_ACRONYM/index.md
 ```
 
-Write `index.md` with the full frontmatter and body. Then add one row to `grants/README.md`
+Write `index.md` with the full frontmatter and body. Then add one row to `projects/README.md`
 (create the file with a header row if it does not yet exist):
 
 ```markdown
@@ -178,22 +230,25 @@ Write `index.md` with the full frontmatter and body. Then add one row to `grants
 Show the user the generated `index.md` and ask them to verify the auto-extracted fields
 (title, funder, amount, period) before finishing.
 
+**Step 7 — Verify layout (run after user confirms).**
+Run the full "Verify project" workflow (see below) on the newly created project and show the compliance report to the user alongside the confirmation. This ensures the repo and SharePoint are consistent from the start.
+
 ---
 
-### Answering a question about a grant
+### Answering a question about a project
 
-Trigger: user asks anything about a specific grant, or asks a cross-grant question
-(e.g. "what grants are due this year?", "summarise the PANTR science case").
+Trigger: user asks anything about a specific project, or asks a cross-project question
+(e.g. "what projects are due this year?", "summarise the PANTR science case").
 
-**Cross-grant questions (no document fetch needed)**
+**Cross-project questions (no document fetch needed)**
 
-Read `grants/README.md` and all `index.md` files (frontmatter only is sufficient).
+Read `projects/README.md` and all `index.md` files (frontmatter only is sufficient).
 Answer directly from the structured metadata — do not fetch SharePoint documents.
 
-**Grant-specific questions about content**
+**Project-specific questions about content**
 
-1. If the grant is not already identified, scan `grants/README.md` to find the best match.
-2. Read `grants/<status>/<folder>/index.md` to get the SharePoint document URLs.
+1. If the project is not already identified, scan `projects/README.md` to find the best match.
+2. Read `projects/<folder>/index.md` to get the SharePoint document URLs.
 3. Determine which document is most relevant to the question:
    - Science/approach questions → main proposal PDF/DOCX
    - Budget/cost questions → budget XLSX or budget section of proposal

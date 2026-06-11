@@ -1,19 +1,45 @@
 ---
+# Full official title of the project
 title: "COHESION: Cross-domain One-Health Environment for Sovereign, Interoperable and Optimised iNference"
+
+# Funding agency (e.g. DFG, EC, BMBF)
 funder: EC
+
+# Call / programme name
 program: HORIZON-INFRA-2026-TECH-01
+
+# Short project name / acronym
 acronym: COHESION
+
+# Submitting institution (DKFZ | UMM)
 institution: DKFZ
+
+# Your role on the project (PI | Co-PI | Coordinator)
 role: PI
-status: active
+
+# Lifecycle status (proposal | rejected | ongoing | finished)
+status: proposal
+
+# Date the proposal was submitted (ISO date or ~ if not yet)
 submitted: ~
+
+# Proposal submission deadline (~ if not applicable)
 deadline: 2026-06-16
-decision_expected: ~
+
+# Funding decision date (~ if not yet known)
 decision: ~
+
+# Direct costs requested in EUR (excl. overhead)
 amount_requested: 593175
-amount_granted: ~
+
+# Project duration: calendar span and runtime in months
 period: 2026–2030
+runtime_months: 48
+
+# Keywords
 tags: [one-health, federated-AI, knowledge-graph, research-infrastructure, BBMRI, sovereign-AI]
+
+# SharePoint folder URL for project documents
 sharepoint_folder: https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/
 ---
 
