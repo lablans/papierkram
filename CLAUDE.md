@@ -37,6 +37,10 @@ A URL ending in `/` triggers listing automatically.
 | webcoop | `https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/` |
 | intracoop | `https://intracoop.dkfz-heidelberg.de/` |
 
+### Versioning
+
+SharePoint's built-in versioning is the only versioning mechanism — files keep their canonical filename on SharePoint. Never upload or instruct the user to save `_v1`, `_v2`, `_old`, etc. suffixed copies to SharePoint. If the user does this, tell them off and remind them to delete the duplicates. Locally (e.g. `/tmp/`), use `_v1`/`_v2` suffixes matching the SharePoint version label when downloading multiple versions for comparison.
+
 ### Reading downloaded files
 
 TODO: Don't reinvent the wheel -- find nice skill to deal with MS Office and PDF files.
