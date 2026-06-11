@@ -25,7 +25,7 @@ python3 .claude/skills/dkfz-sharepoint/sp.py --list "https://webcoop.inet.dkfz-h
 # Download a file
 python3 .claude/skills/dkfz-sharepoint/sp.py \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/somefile.docx" \
-  -o /tmp/somefile.docx
+  -o tmp/somefile.docx
 ```
 
 A URL ending in `/` triggers listing automatically.
@@ -39,7 +39,7 @@ A URL ending in `/` triggers listing automatically.
 
 ### Versioning
 
-SharePoint's built-in versioning is the only versioning mechanism — files keep their canonical filename on SharePoint. Never upload or instruct the user to save `_v1`, `_v2`, `_old`, etc. suffixed copies to SharePoint. If the user does this, tell them off and remind them to delete the duplicates. Locally (e.g. `/tmp/`), use `_v1`/`_v2` suffixes matching the SharePoint version label when downloading multiple versions for comparison.
+SharePoint's built-in versioning is the only versioning mechanism — files keep their canonical filename on SharePoint. Never upload or instruct the user to save `_v1`, `_v2`, `_old`, etc. suffixed copies to SharePoint. If the user does this, tell them off and remind them to delete the duplicates. Locally (e.g. `tmp/`), use `_v1`/`_v2` suffixes matching the SharePoint version label when downloading multiple versions for comparison.
 
 ### Reading or working with downloaded files
 
@@ -202,7 +202,7 @@ List the SharePoint folder using `sp.py --list <sharepoint_folder>`. Identify th
 **Run document completeness check now** — apply the Required Documents rules to the listing. Emit a warning for every required document not found in the listing before proceeding. Do not skip this even if the document table looks complete at a glance.
 
 **Step 3 — Extract proposal text.**
-Download the main proposal document to `/tmp/` via `sp.py`. Extract its text using existing skills to read pdf and microsoft office files.
+Download the main proposal document to `tmp/` via `sp.py`. Extract its text using existing skills to read pdf and microsoft office files.
 
 **Step 4 — Generate frontmatter and summary.**
 From the extracted text, derive:
@@ -253,7 +253,7 @@ Answer directly from the structured metadata — do not fetch SharePoint documen
    - Science/approach questions → main proposal PDF/DOCX
    - Budget/cost questions → budget XLSX or budget section of proposal
    - Timeline/milestones → proposal or work-plan section
-4. Download that document to `/tmp/` via `sp.py` and extract its text (see step 3 of
+4. Download that document to `tmp/` via `sp.py` and extract its text (see step 3 of
    the "adding a grant" workflow for extraction commands).
 5. Answer the question, citing the document and section where possible.
 6. If the answer is not found in the first document, check the next most relevant file
