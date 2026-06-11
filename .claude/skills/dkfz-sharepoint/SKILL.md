@@ -55,6 +55,16 @@ python3 ~/.claude/skills/dkfz-sharepoint/sp.py --list \
 
 A URL ending in `/` also triggers listing automatically.
 
+### Show version history of a file
+
+```bash
+python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \
+  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx"
+```
+
+Prints each version with its label, creation timestamp, byte size, and author.
+The current (latest) version is prefixed with `@` (e.g. `@2.0`).
+
 ### From Claude Code (typical agent use)
 
 Use `Bash` with the commands above. After download, use `Read` or `Bash` to inspect content. For DOCX files, extract text with:
@@ -72,7 +82,7 @@ with zipfile.ZipFile('/tmp/file.docx') as z:
 
 ## Verified examples
 
-These commands were run and worked during skill creation:
+These commands were run and worked:
 
 ```
 # List
@@ -88,6 +98,14 @@ python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/GBA/GBN_21-23/Management/Berichte/Abschlussbericht%202026/GBN_01EY2001D_IT_Abschlussbericht.docx" \
   -o /tmp/test.docx
 # → Saved 78,990 bytes → /tmp/test.docx
+
+# Version history
+python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \
+  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx"
+# → Version    Created                        Size  Created By
+# → ---------------------------------------------------------------------------
+# → @2.0       09.06.2026 16:34          2,059,281  Kussel, Tobias
+# → 1.0        09.06.2026 16:33          2,059,281  Kussel, Tobias
 ```
 
 ## Gotchas

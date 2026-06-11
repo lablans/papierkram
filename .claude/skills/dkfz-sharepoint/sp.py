@@ -140,6 +140,84 @@ def cmd_list(url, username, password):
             print(f"{name}{meta}")
 
 
+def _resolve_display_name(sess, sp_host, site_path, login):
+    """Return 'Last, First' display name for a SharePoint login, or the raw login on failure."""
+    from urllib.parse import quote as urlquote
+    url = (
+        f"{sp_host}{site_path}/_api/SP.UserProfiles.PeopleManager"
+        f"/GetPropertiesFor(accountName=@v)?@v='{urlquote(login)}'"
+    )
+    try:
+        r = sess.get(url, headers={"Accept": "application/json;odata=verbose"}, timeout=10)
+        if r.status_code == 200:
+            name = r.json().get("d", {}).get("DisplayName", "")
+            if name:
+                return name
+    except Exception:
+        pass
+    return login.replace("i:0e.t|adfs|", "").replace("i:0#.w|ad\\", "")
+
+
+def cmd_versions(url, username, password):
+    """List version history of a SharePoint file via Versions.asmx SOAP."""
+    sp_host = sp_host_from_url(url)
+    parsed = urlparse(url)
+    file_rel = unquote(parsed.path)
+
+    # Versions.asmx must be called at the site level (e.g. /sites/verbis)
+    parts = file_rel.strip("/").split("/")
+    site_path = "/" + "/".join(parts[:2]) if len(parts) >= 2 and parts[0] == "sites" else ""
+
+    sess = authenticate(sp_host, username, password)
+
+    soap_url = f"{sp_host}{site_path}/_vti_bin/Versions.asmx"
+    soap_body = f"""<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <soap:Body>
+    <GetVersions xmlns="http://schemas.microsoft.com/sharepoint/soap/">
+      <fileName>{file_rel}</fileName>
+    </GetVersions>
+  </soap:Body>
+</soap:Envelope>"""
+
+    r = sess.post(
+        soap_url,
+        data=soap_body,
+        headers={
+            "Content-Type": "text/xml; charset=utf-8",
+            "SOAPAction": '"http://schemas.microsoft.com/sharepoint/soap/GetVersions"',
+        },
+    )
+    if r.status_code != 200:
+        print(f"Error: Versions.asmx returned {r.status_code}", file=sys.stderr)
+        sys.exit(1)
+
+    root = ET.fromstring(r.content)
+    ns = "http://schemas.microsoft.com/sharepoint/soap/"
+    items = list(root.iter(f"{{{ns}}}result"))
+    if not items:
+        print("No version history found.")
+        return
+
+    # Resolve each unique login to a display name (cached)
+    name_cache = {}
+    def display(login):
+        if login not in name_cache:
+            name_cache[login] = _resolve_display_name(sess, sp_host, site_path, login)
+        return name_cache[login]
+
+    print(f"{'Version':<10} {'Created':<22} {'Size':>12}  Created By")
+    print("-" * 75)
+    for elem in items:
+        ver  = elem.get("version", "")
+        date = elem.get("created", "")[:19].replace("T", " ")
+        size = elem.get("size", "")
+        by   = display(elem.get("createdBy", ""))
+        print(f"{ver:<10} {date:<22} {int(size):>12,}  {by}" if size else f"{ver:<10} {date:<22} {'':>12}  {by}")
+
+
 def cmd_download(url, output, username, password):
     """Download a file from SharePoint."""
     sp_host = sp_host_from_url(url)
@@ -171,11 +249,17 @@ def main():
         "--list", action="store_true",
         help="List directory contents instead of downloading",
     )
+    p.add_argument(
+        "--versions", action="store_true",
+        help="Show version history of a file",
+    )
     args = p.parse_args()
 
     username, password = get_credentials()
 
-    if args.list or args.url.endswith("/"):
+    if args.versions:
+        cmd_versions(args.url, username, password)
+    elif args.list or args.url.endswith("/"):
         cmd_list(args.url, username, password)
     else:
         cmd_download(args.url, args.output, username, password)
