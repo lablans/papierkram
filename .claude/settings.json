@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python3 *dkfz-sharepoint/sp.py*)"
+      "Bash(python3 *dkfz-sharepoint/sp.py*)",
+      "Bash(wait)"
     ]
+  },
+  "enabledPlugins": {
+    "document-skills@anthropic-agent-skills": true
   }
 }

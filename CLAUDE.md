@@ -41,9 +41,25 @@ A URL ending in `/` triggers listing automatically.
 
 SharePoint's built-in versioning is the only versioning mechanism — files keep their canonical filename on SharePoint. Never upload or instruct the user to save `_v1`, `_v2`, `_old`, etc. suffixed copies to SharePoint. If the user does this, tell them off and remind them to delete the duplicates. Locally (e.g. `/tmp/`), use `_v1`/`_v2` suffixes matching the SharePoint version label when downloading multiple versions for comparison.
 
-### Reading downloaded files
+### Reading or working with downloaded files
 
-TODO: Don't reinvent the wheel -- find nice skill to deal with MS Office and PDF files.
+**Always** use the `document-skills` plugin for working with DOCX, XLSX, PPTX, and PDF files:
+
+- XLSX / CSV → `Skill("xlsx")`
+- DOCX → `Skill("docx")`
+- PDF → `Skill("pdf")`
+- PPTX → `Skill("pptx")`
+
+If the plugin is not installed, tell the user to install it:
+
+```
+/plugin marketplace add anthropics/skills
+/plugin install document-skills@anthropic-agent-skills
+```
+
+### Python package dependencies
+
+The document-skills plugin (and sp.py) require Python packages. If a package is missing, **do not find workarounds**: Just ask the user to install the package. Don't install it yourself.
 
 ## Grant Repository Layout
 
