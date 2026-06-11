@@ -12,7 +12,7 @@ The `dkfz-sharepoint` skill (`sp.py`) authenticates to DKFZ on-premise SharePoin
 
 ### Prerequisites
 
-- `rbw` (Bitwarden CLI) must be unlocked; credentials are fetched from the UUID in `.env`
+- `rbw` (Bitwarden CLI) must be unlocked before calling `sp.py`; if it fails with "pinentry error: Inappropriate ioctl for device", ask the user to run `! rbw unlock` in their terminal. Credentials are fetched from the UUID in `.env`
 - `.env` file (gitignored) must exist — copy from `.env.example` and fill in `DKFZ_SP_RBW_UUID`
 - Python packages: `requests`, `python-dotenv`, `beautifulsoup4`
 
@@ -71,7 +71,7 @@ submitted: ~                         # ISO date or ~ if not yet
 deadline: 2025-11-30
 decision_expected: 2026-03-01
 decision: ~
-amount_requested: 450000             # EUR
+amount_requested: 450000             # EUR, direct costs excl. overhead
 amount_granted: ~
 period: 2025–2027
 tags: [pancreatic-cancer, single-cell]
@@ -125,6 +125,8 @@ Ask for all fields that cannot be inferred from the proposal document. Ask them 
 - `status` — default `active` unless told otherwise
 
 **Step 2 — Discover documents.**
+If the user provides an `AllItems.aspx?id=...` SharePoint URL, convert it to a direct path URL first: URL-decode the `id` parameter value and use that as the path (append a trailing `/`). For example, `?id=%2Fsites%2Fverbis%2Fpantr%2F2026%2FCOHESION` → `https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/`.
+
 List the SharePoint folder using `sp.py --list <sharepoint_folder>`. Identify the main proposal file (largest PDF or DOCX, or one named "proposal"/"Antrag") and the budget file (XLSX or a clearly named PDF).
 
 **Step 3 — Extract proposal text.**
@@ -135,6 +137,8 @@ From the extracted text, derive:
 - `title`, `funder`, `program`, `acronym`, `amount_requested`, `period` — from cover page or header
 - Summary paragraph — from the abstract or Zusammenfassung section
 - Document table rows — one row per file found in step 2
+
+For `amount_requested`: use **direct costs only, excluding overhead/indirect costs**. If the proposal document contains placeholder values (`XXX €`), fall back to the budget XLSX. In the budget XLSX the overhead line is typically labelled "Indirect Costs" or shown as a flat-rate percentage row — subtract it from the total eligible costs to get the direct cost figure.
 
 **Step 5 — Create files.**
 Determine the folder name as `YYYY_FUNDER_ACRONYM` using the deadline year (or current year if no deadline).
