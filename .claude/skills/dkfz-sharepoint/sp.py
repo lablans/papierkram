@@ -4,6 +4,7 @@
 set_euo = None  # Python equivalent: errors exit immediately via sys.exit
 
 import sys, subprocess, os, argparse
+from email.utils import parsedate_to_datetime
 from dotenv import load_dotenv
 load_dotenv()
 from urllib.parse import urlparse, unquote
@@ -96,7 +97,7 @@ def cmd_list(url, username, password):
     propfind_body = (
         '<?xml version="1.0"?>'
         '<D:propfind xmlns:D="DAV:">'
-        "<D:prop><D:displayname/><D:resourcetype/><D:getcontentlength/></D:prop>"
+        "<D:prop><D:displayname/><D:resourcetype/><D:getcontentlength/><D:getlastmodified/></D:prop>"
         "</D:propfind>"
     )
     r = sess.request(
@@ -114,14 +115,28 @@ def cmd_list(url, username, password):
     for resp in root.findall("D:response", ns):
         name = resp.findtext(".//D:displayname", "", ns)
         size = resp.findtext(".//D:getcontentlength", "", ns)
+        modified_raw = resp.findtext(".//D:getlastmodified", "", ns)
         is_dir = resp.find(".//D:collection", ns) is not None
         if name:
-            entries.append((is_dir, name, size or ""))
+            try:
+                modified = parsedate_to_datetime(modified_raw).strftime("%Y-%m-%d %H:%M") if modified_raw else ""
+            except Exception:
+                modified = modified_raw
+            entries.append((is_dir, name, size or "", modified))
 
     # Dirs first, then files, each alphabetically
-    for is_dir, name, size in sorted(entries, key=lambda x: (not x[0], x[1].lower())):
-        suffix = "/" if is_dir else f"  ({size} bytes)" if size else ""
-        print(f"{name}{suffix}")
+    for is_dir, name, size, modified in sorted(entries, key=lambda x: (not x[0], x[1].lower())):
+        if is_dir:
+            mod_str = f"  {modified}" if modified else ""
+            print(f"{name}/{mod_str}")
+        else:
+            parts = []
+            if modified:
+                parts.append(modified)
+            if size:
+                parts.append(f"{int(size):,} bytes")
+            meta = f"  ({', '.join(parts)})" if parts else ""
+            print(f"{name}{meta}")
 
 
 def cmd_download(url, output, username, password):
