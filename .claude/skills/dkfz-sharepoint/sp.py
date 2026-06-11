@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Fetch files from DKFZ SharePoint (webcoop / intracoop) via ADFS auth."""
+import sys; sys.dont_write_bytecode = True
 
 set_euo = None  # Python equivalent: errors exit immediately via sys.exit
 
