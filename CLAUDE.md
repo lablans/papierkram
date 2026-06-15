@@ -290,7 +290,7 @@ Show the user the generated `index.md` and ask them to verify the auto-extracted
 (title, funder, amount, period) before finishing.
 
 **Step 7 — Verify layout (run after user confirms).**
-Run the full "Verify project" workflow (see below) on the newly created project and show the compliance report to the user alongside the confirmation. This ensures the repo and SharePoint are consistent from the start.
+Run the full "Verifying a project" workflow (see below) on the newly created project and show the compliance report to the user alongside the confirmation. This ensures the repo and SharePoint are consistent from the start.
 
 ---
 
@@ -320,3 +320,60 @@ Answer directly from the structured metadata — do not fetch SharePoint documen
 5. Answer the question, citing the document and section where possible.
 6. If the answer is not found in the first document, check the next most relevant file
    from the SharePoint Documents table before saying the information is unavailable.
+
+---
+
+### Verifying a project
+
+Trigger: step 7 of "Adding a new project", or the user asks to verify / check / audit a
+project's documents or layout.
+
+The SharePoint Documents table in `index.md` is a cache of the live folder. This workflow
+re-validates it against SharePoint and **reconciles** the table — it is the single source
+of truth for the table's contents. It does **not** blindly overwrite: the `Document` label
+column is human-curated (e.g. "Institutional Endorsement", "Verwertungsplan") and cannot be
+re-derived from filenames, so labels are preserved.
+
+**Step 1 — Determine the documents base.**
+From `status` (see "Document location by status"):
+- `proposal`, `rejected` → `sharepoint_folder` (root)
+- `ongoing`, `finished` → `<sharepoint_folder>Management/Anträge/`
+
+**Step 2 — Enumerate live files.**
+List the base with `sp.py --list <base>`. `sp.py --list` is **non-recursive**; if the
+listing contains subfolders, issue one additional `--list` per immediate subfolder to
+enumerate their files (descend **one level** below the base). Do not recurse deeper — flag
+any subfolder nested deeper than one level below the base as a **layout deviation** (note
+it in the report but do not chase it).
+
+Enumeration only sees files at or one level below the base. Existing table rows whose
+`File` points *outside* the base (e.g. a stray directly under `Management/` for an
+`ongoing` project) will therefore not appear in the enumeration; do not treat that as a
+deletion — see Step 4. Such out-of-base rows are themselves layout deviations and should be
+listed in the report.
+
+**Step 3 — Completeness check.**
+Run the Required Documents check against the enumerated files and emit a missing-document
+warning for each one not found (see "Warning format").
+
+**Step 4 — Reconcile the table.** For each live file, compute its `File` value (path
+relative to `sharepoint_folder`, decoded/human-readable):
+- **Match by filename** (the last path segment) to an existing table row. If matched, keep
+  the row's `Document` label and refresh its `File` value to the live relative path.
+- **Live file with no matching row** → append a new row with a best-effort `Document` label
+  derived from the filename, marked `(review label)` so the user knows to confirm it.
+- **Existing row whose file is no longer present live** → keep the row but mark it
+  `⚠️ not found` rather than deleting it (the file may have been moved or renamed). Exception:
+  if the row's `File` lies *outside* the documents base (so enumeration never covered it),
+  trust it as-is — do not mark it not-found — and report it as a known layout deviation.
+
+**Step 5 — Compliance report.** Summarize for the user:
+- required documents present vs. missing,
+- new files added to the table (with their provisional labels),
+- rows marked not-found,
+- layout deviations (files outside the expected base / nested too deep),
+- any `_v1` / `_v2` / `_old` / `_final` duplicate filenames on SharePoint — flag these per
+  the Versioning policy and remind the user to delete the duplicates.
+
+**Step 6 — Write back.** Update the SharePoint Documents table in `index.md` with the
+reconciled rows.
