@@ -60,6 +60,21 @@ Safeguards (do not work around them):
 - One approval is never standing approval — confirm again for each new upload.
 - The `--confirm` invocation always triggers an approval prompt via a deterministic PreToolUse hook (`.claude/hooks/sp_upload_guard.py`), whose message names the destination and whether the write creates or updates a file. Do not attempt to bypass or suppress it.
 
+### Compare before updating an existing file
+
+When a dry run reports `action: update` (the destination already exists), **do not upload before confirming the content actually differs.** A re-saved file (e.g. a `.docx`/`.xlsx` opened and saved again) gets a different byte hash and may even keep the same size while its content is unchanged — uploading it would add a pointless SharePoint version.
+
+Procedure:
+
+1. Download the existing remote file to `tmp/` (e.g. `tmp/<name>_remote.docx`).
+2. Compare against the local source. A differing `sha256` is **not** sufficient to conclude the content changed for zip-based Office formats. Compare *content*:
+   - Office formats (`.docx`, `.xlsx`, `.pptx`) are ZIP archives — unzip both and `diff -rq` the unpacked trees. If every internal part is identical, the content is unchanged regardless of the outer hash.
+   - For a quick text check, also `pandoc … -o` both and `diff` the output, but treat the unpacked-tree comparison as authoritative.
+3. If the content is identical → **do not upload**; tell the user the remote copy already matches.
+4. If the content differs → proceed with the normal guarded `--confirm --update` path (still requires explicit per-file authorization).
+
+This applies only to updates. A `create` (target does not exist) needs no comparison.
+
 ### Known site prefixes
 
 | Server | Base URL |
