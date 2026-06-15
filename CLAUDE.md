@@ -170,15 +170,42 @@ One-paragraph lay summary (auto-generated from abstract).
 
 ## SharePoint Documents
 
-| Document | Type | URL |
+| Document | Type | File |
 |---|---|---|
-| Full Proposal | PDF | https://webcoop.../proposal.pdf |
-| Budget Table | XLSX | https://webcoop.../budget.xlsx |
+| Full Proposal | PDF | Part B.pdf |
+| Budget Table | XLSX | Budget.xlsx |
 
 ## Key Contacts
 
 ## Notes
 ```
+
+**Do not store full document URLs.** The `File` column holds each document's path
+*relative to* `sharepoint_folder` — the host/site prefix is redundant with
+`sharepoint_folder` and is the part most prone to de-sync. In the normal flat case
+this is just the (canonical) filename, e.g. `Budget.xlsx`; for nested legacy layouts
+it is a subpath, e.g. `Management/Anträge/2022_AZA/AZAP.pdf`.
+
+Store the `File` value **decoded and human-readable** — literal spaces and umlauts,
+never `%20` or other percent-escapes. (Filenames containing a literal `%`, `#`, or `?`
+are not supported by this reconstruction scheme — they would be misread as escape/fragment/
+query characters; none of the current documents have them.)
+
+**Reconstructing the URL on demand:** concatenate `sharepoint_folder` (which always
+ends in `/`) with the `File` value and pass the result straight to `sp.py`. `requests`
+percent-encodes spaces and non-ASCII characters automatically, so no manual encoding is
+needed:
+
+```bash
+# sharepoint_folder + File → live URL
+python3 .claude/skills/dkfz-sharepoint/sp.py \
+  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/Budget.xlsx" \
+  -o tmp/Budget.xlsx
+```
+
+The table is a cache of the live folder. Treat it as a snapshot to be re-validated, not
+as ground truth — the "Verifying a project" workflow reconciles it against the live
+listing.
 
 ## Required Documents
 
@@ -280,7 +307,10 @@ Answer directly from the structured metadata — do not fetch SharePoint documen
 **Project-specific questions about content**
 
 1. If the project is not already identified, scan `projects/README.md` to find the best match.
-2. Read `projects/<folder>/index.md` to get the SharePoint document URLs.
+2. Read `projects/<folder>/index.md`. The SharePoint Documents table stores each file's
+   path relative to `sharepoint_folder` in the `File` column — reconstruct a document's
+   URL on demand by concatenating `sharepoint_folder` with that value (see "`index.md`
+   body convention").
 3. Determine which document is most relevant to the question:
    - Science/approach questions → main proposal PDF/DOCX
    - Budget/cost questions → budget XLSX or budget section of proposal

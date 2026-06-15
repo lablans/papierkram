@@ -49,15 +49,15 @@ COHESION aims to design, build, and validate Europe's first sovereign, federated
 
 ## SharePoint Documents
 
-| Document | Type | URL |
+| Document | Type | File |
 |---|---|---|
-| Full Proposal | DOCX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx |
-| Budget Table (DKFZ) | XLSX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/Estimated_budget_template_COHESION_DKFZ.xlsx |
-| DKFZ Tasks | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_Tasks_Dkfz.pdf |
-| Info Collector (DKFZ) | DOCX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_Info%20Collector_DKFZ.docx |
-| Checklist | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/ChecklistCOHESION.pdf |
-| Checklist EN | DOCX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/Checklist_EN_2.docx |
-| Pitch Deck (BBMRI) | PPTX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_Pitch_Deck_BBMRI_2%20(7).pptx |
+| Full Proposal | DOCX | COHESION_full.docx |
+| Budget Table (DKFZ) | XLSX | Estimated_budget_template_COHESION_DKFZ.xlsx |
+| DKFZ Tasks | PDF | COHESION_Tasks_Dkfz.pdf |
+| Info Collector (DKFZ) | DOCX | COHESION_Info Collector_DKFZ.docx |
+| Checklist | PDF | ChecklistCOHESION.pdf |
+| Checklist EN | DOCX | Checklist_EN_2.docx |
+| Pitch Deck (BBMRI) | PPTX | COHESION_Pitch_Deck_BBMRI_2 (7).pptx |
 
 ## Key Contacts
 

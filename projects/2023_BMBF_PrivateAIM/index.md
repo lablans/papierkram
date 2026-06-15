@@ -51,16 +51,16 @@ PrivateAIM develops FLAME (Federated Learning and Analytics in Medicine), a next
 
 Documents for ongoing projects are located under `Management/Anträge/`.
 
-| Document | Type | URL |
+| Document | Type | File |
 |---|---|---|
-| Full Proposal (Part B) | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/Anträge/2022_Antrag_final/A_B_PrivateAIM.pdf |
-| Budget / Personnel Calculation | XLSX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/Anträge/2022_AZA/Anlage_4_Berechnung_Personalausgaben_MII_2023bis2027.xlsx |
-| AZAP (final) | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/Anträge/2022_AZA/PrivateAIM-AZAP-Final.pdf |
-| Verwertungsplan | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/Anträge/2022_AZA/Anlage_2_Verwertungsplan_PrivateAIM.docx.pdf |
-| Meilenstein- und Arbeitsplan | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/Anträge/2022_AZA/Anlage_6_Meilenstein_und_Arbeitsplan.pdf |
-| Ressourcenbezogener Arbeitsplan | XLSX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/Anträge/2022_AZA/Anlage_5_Ressourcenbezogener_Arbeitsplan_2023bis2027.xlsx |
-| Institutional Endorsement | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/Anträge/2022_Antrag_final/Befürwortung_PrivatAIM_112022.pdf |
-| Online Application (Profi) | PDF | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/PrivateAim/Management/01ZZ2316O_profi-Online-Antrag%2071000727.pdf |
+| Full Proposal (Part B) | PDF | Management/Anträge/2022_Antrag_final/A_B_PrivateAIM.pdf |
+| Budget / Personnel Calculation | XLSX | Management/Anträge/2022_AZA/Anlage_4_Berechnung_Personalausgaben_MII_2023bis2027.xlsx |
+| AZAP (final) | PDF | Management/Anträge/2022_AZA/PrivateAIM-AZAP-Final.pdf |
+| Verwertungsplan | PDF | Management/Anträge/2022_AZA/Anlage_2_Verwertungsplan_PrivateAIM.docx.pdf |
+| Meilenstein- und Arbeitsplan | PDF | Management/Anträge/2022_AZA/Anlage_6_Meilenstein_und_Arbeitsplan.pdf |
+| Ressourcenbezogener Arbeitsplan | XLSX | Management/Anträge/2022_AZA/Anlage_5_Ressourcenbezogener_Arbeitsplan_2023bis2027.xlsx |
+| Institutional Endorsement | PDF | Management/Anträge/2022_Antrag_final/Befürwortung_PrivatAIM_112022.pdf |
+| Online Application (Profi) | PDF | Management/01ZZ2316O_profi-Online-Antrag 71000727.pdf |
 
 > ⚠️ Missing required document: **Grants office checklist** — required for all projects. No file matching "checklist" or "Checkliste" was found on SharePoint.
 
