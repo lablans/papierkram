@@ -184,15 +184,17 @@ One-paragraph lay summary (auto-generated from abstract).
 
 Every project must have specific documents on SharePoint. **Whenever you read or create a project `index.md`, run the completeness check below and emit a warning for every missing required document** — do not wait for the user to ask.
 
-### Document requirements by status and funder
+### Document requirements and naming
 
-| Document | Required when | Keywords / naming hints |
-|---|---|---|
-| Budget table | always | "budget", "Kosten", "Finanzplan", "Kalkulation"; `.xlsx`/`.xls` extension |
-| Proposal text / Part B | always | "proposal", "Antrag", "Part_B", "PartB", "Teil_B", "full" |
-| Grants office checklist | always | "checklist", "Checkliste" |
-| Part A — applicant info | EU projects (funder: EC, EU, ERC, or similar) | "Part_A", "PartA", "Teil_A", "administrative" |
-| AZAP | once submitted (`submitted:` field is a date, not `~`) | "AZAP" |
+| Document | Required when | Keywords / naming hints | Canonical filename |
+|---|---|---|---|
+| Budget table | always | "budget", "Kosten", "Finanzplan", "Kalkulation"; `.xlsx` extension | `Budget.xlsx` |
+| Grants office checklist | always | "checklist", "Checkliste" | `Checklist.docx`, `Checklist.pdf` |
+| Part A — applicant info | EU projects (funder: EC, EU, ERC, or similar) | "Part_A", "PartA", "Teil_A", "administrative" | ~ |
+| Part B - proposal text  | always | "proposal", "Antrag", "Part_B", "PartB", "Teil_B", "full" | ~ |
+| AZAP/AZK | Only for BMFTR proposal, once submitted (`submitted:` field is a date, not `~`) | "AZAP" (DKFZ), "AZK" (UMM) | `AZAP.pdf` |
+
+**Naming on upload:** give a required document its canonical filename from the column above. Where the canonical filename is `~`, derive a clean name yourself — strip language markers (`_EN`, `_DE`) and version/iteration suffixes (`_3`, `_v2`, `_final`, `_draft`) from the source filename. Rely on SharePoint versioning, not the name (see Versioning).
 
 ### Document location by status
 
