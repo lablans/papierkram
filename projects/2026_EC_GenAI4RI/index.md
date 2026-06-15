@@ -52,6 +52,7 @@ GenAI4RI proposes a next-generation, generative-AI digitalisation framework for 
 | Document | Type | URL |
 |---|---|---|
 | Working Document (proposal draft) | DOCX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/GenAI4RI/GenAI4RI_WorkingDocument.docx |
+| Grants Office Checklist | DOCX | https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/GenAI4RI/Checklist.docx |
 
 ## Key Contacts
 
