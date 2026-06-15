@@ -4,7 +4,8 @@ import sys; sys.dont_write_bytecode = True
 
 set_euo = None  # Python equivalent: errors exit immediately via sys.exit
 
-import sys, subprocess, os, argparse, json
+import sys, subprocess, os, argparse, json, hashlib
+from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from dotenv import load_dotenv
 load_dotenv()
@@ -24,6 +25,32 @@ SUPPORTED_HOSTS = {
     "intracoop",
     "intracoop.dkfz-heidelberg.de",
 }
+
+# --- Write-path safeguards (uploads only) ---------------------------------
+# D4: uploads are refused unless the destination starts with one of these
+# prefixes. Override with DKFZ_SP_WRITE_ALLOW_PREFIXES (comma-separated).
+DEFAULT_WRITE_PREFIXES = (
+    "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/",
+)
+# D9: append-only audit trail of every actual upload attempt, kept next to
+# this script (gitignored).
+AUDIT_LOG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads.log")
+
+
+def _write_allow_prefixes():
+    env = os.environ.get("DKFZ_SP_WRITE_ALLOW_PREFIXES")
+    if env:
+        return tuple(p.strip() for p in env.split(",") if p.strip())
+    return DEFAULT_WRITE_PREFIXES
+
+
+def _audit(record):
+    """D9: append one JSON line per upload attempt. Best-effort, never fatal."""
+    try:
+        with open(AUDIT_LOG, "a") as f:
+            f.write(json.dumps(record) + "\n")
+    except OSError:
+        pass
 
 
 def _cache_path(sp_host):
@@ -338,6 +365,125 @@ def cmd_download(url, output, username, password, version_label=None):
     print(f"Saved {len(r.content):,} bytes → {output}")
 
 
+def _target_status(sess, url):
+    """PROPFIND Depth:0 on a target URL. Returns the HTTP status code."""
+    body = (
+        '<?xml version="1.0"?>'
+        '<D:propfind xmlns:D="DAV:"><D:prop><D:resourcetype/></D:prop></D:propfind>'
+    )
+    r = sess.request(
+        "PROPFIND", url,
+        headers={"Depth": "0", "Content-Type": "application/xml"},
+        data=body,
+    )
+    return r.status_code
+
+
+def cmd_upload(local_path, url, username, password, confirm=False, update=False):
+    """Upload a local file to SharePoint via WebDAV PUT, behind safeguards.
+
+    D1 this is a separate, explicit mode (never inferred).
+    D2 dry-run by default; nothing is transmitted without --confirm.
+    D3 create-only by default; updating an existing file requires --update.
+    D4 destination must lie under an allowed write prefix.
+    D9 every actual attempt is appended to the audit log.
+    """
+    sp_host = sp_host_from_url(url)
+
+    # D4: write-path allowlist — refuse anything outside the allowed roots.
+    prefixes = _write_allow_prefixes()
+    if not any(url.startswith(pre) for pre in prefixes):
+        print(
+            "Error: upload destination is not within an allowed write prefix.\n"
+            f"  destination: {url}\n"
+            f"  allowed    : {', '.join(prefixes)}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
+    if not os.path.isfile(local_path):
+        print(f"Error: local file not found: {local_path}", file=sys.stderr)
+        sys.exit(2)
+
+    with open(local_path, "rb") as f:
+        data = f.read()
+    sha = hashlib.sha256(data).hexdigest()
+    size = len(data)
+
+    # Probe whether the target already exists (needs auth; retry once on 403).
+    for attempt in range(2):
+        sess = _get_session(sp_host, username, password, force=(attempt > 0))
+        code = _target_status(sess, url)
+        if code == 403 and attempt == 0:
+            continue
+        break
+
+    if code == 207:
+        exists = True
+    elif code == 404:
+        exists = False
+    else:
+        # Ambiguous — refuse to guess rather than risk clobbering.
+        print(
+            f"Error: could not determine whether the target exists "
+            f"(PROPFIND returned {code}). Aborting for safety.",
+            file=sys.stderr,
+        )
+        sys.exit(4)
+
+    action = "update (adds a new SharePoint version)" if exists else "create new file"
+    print("-- SharePoint upload ---------------------------------------------")
+    print(f"  source       : {local_path}")
+    print(f"  size         : {size:,} bytes")
+    print(f"  sha256       : {sha}")
+    print(f"  destination  : {url}")
+    print(f"  target exists: {'YES' if exists else 'no'}")
+    print(f"  action       : {action}")
+    print("------------------------------------------------------------------")
+
+    # D2: dry-run unless --confirm.
+    if not confirm:
+        print("DRY RUN - nothing was sent. Re-run with --confirm to upload.")
+        return
+
+    # D3: create-only unless --update.
+    if exists and not update:
+        print(
+            "Error: target already exists; uploading would add a new version.\n"
+            "       Re-run with --update to confirm updating the existing file.",
+            file=sys.stderr,
+        )
+        sys.exit(3)
+
+    # Transmit (retry once on 403).
+    for attempt in range(2):
+        sess = _get_session(sp_host, username, password, force=(attempt > 0))
+        r = sess.put(url, data=data)
+        if r.status_code == 403 and attempt == 0:
+            continue
+        break
+
+    ok = r.status_code in (200, 201, 204)
+    _audit({
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "user": username,
+        "source": os.path.abspath(local_path),
+        "sha256": sha,
+        "size": size,
+        "destination": url,
+        "existed": exists,
+        "status": r.status_code,
+        "result": "ok" if ok else "error",
+    })
+
+    if not ok:
+        print(f"Error: PUT returned {r.status_code}", file=sys.stderr)
+        sys.exit(1)
+
+    verb = "Updated" if exists else "Uploaded"
+    print(f"{verb} {size:,} bytes -> {url}  (HTTP {r.status_code})")
+
+
 def main():
     p = argparse.ArgumentParser(
         description="Fetch files from DKFZ SharePoint (webcoop/intracoop)"
@@ -357,11 +503,29 @@ def main():
         metavar="LABEL",
         help="Download a specific version (e.g. 1.0); use with download mode",
     )
+    p.add_argument(
+        "--upload",
+        metavar="LOCALFILE",
+        help="Upload LOCALFILE to the destination URL (dry-run unless --confirm)",
+    )
+    p.add_argument(
+        "--confirm", action="store_true",
+        help="Actually transmit the upload (without it, --upload is a dry run)",
+    )
+    p.add_argument(
+        "--update", action="store_true",
+        help="Allow upload to an existing file (adds a new version); else create-only",
+    )
     args = p.parse_args()
 
     username, password = get_credentials()
 
-    if args.versions:
+    if args.upload:
+        cmd_upload(
+            args.upload, args.url, username, password,
+            confirm=args.confirm, update=args.update,
+        )
+    elif args.versions:
         cmd_versions(args.url, username, password)
     elif args.list or args.url.endswith("/"):
         cmd_list(args.url, username, password)

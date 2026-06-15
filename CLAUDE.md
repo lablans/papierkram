@@ -8,7 +8,7 @@ This repo ("papierkram" — German for paperwork) is a Claude Code workspace for
 
 ## SharePoint skill
 
-The `dkfz-sharepoint` skill (`sp.py`) authenticates to DKFZ on-premise SharePoint via ADFS and supports listing directories and downloading files.
+The `dkfz-sharepoint` skill (`sp.py`) authenticates to DKFZ on-premise SharePoint via ADFS and supports listing directories, downloading files, and — behind safeguards — uploading files.
 
 ### Prerequisites
 
@@ -29,6 +29,36 @@ python3 .claude/skills/dkfz-sharepoint/sp.py \
 ```
 
 A URL ending in `/` triggers listing automatically.
+
+### Uploading files (guarded write path)
+
+Uploading is the only operation that writes to SharePoint. It is deliberately gated. The command is:
+
+```bash
+# Dry run (default): reports source, size, sha256, destination, whether the
+# target exists, and create-vs-update. Sends NOTHING.
+python3 .claude/skills/dkfz-sharepoint/sp.py \
+  --upload tmp/PartA.pdf \
+  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/BBMRI-IMPACT/Part A.pdf"
+
+# Actually transmit (creates a new file):
+#   ... --confirm
+# Update an EXISTING file (adds a new SharePoint version):
+#   ... --confirm --update
+```
+
+Safeguards (do not work around them):
+
+- **Dry-run is the default.** Nothing is transmitted without `--confirm`. Always run the dry run first and show its output to the user.
+- **Create-only by default.** Uploading onto an existing file requires `--update` (which adds a new SharePoint version — never a `_v2` duplicate; see Versioning).
+- **Write-path allowlist.** Uploads are refused unless the destination is under an allowed prefix (default `…/sites/verbis/pantr/`; override via `DKFZ_SP_WRITE_ALLOW_PREFIXES`).
+- **Audit log.** Every actual upload attempt is appended to `.claude/skills/dkfz-sharepoint/uploads.log` (gitignored).
+
+**Policy — never write without explicit, specific authorization:**
+
+- Only run `--confirm` when the user has explicitly asked to upload *that file* to *that destination*. Showing the dry run does not by itself authorize the write.
+- One approval is never standing approval — confirm again for each new upload.
+- The `--confirm` invocation always triggers an approval prompt via a deterministic PreToolUse hook (`.claude/hooks/sp_upload_guard.py`), whose message names the destination and whether the write creates or updates a file. Do not attempt to bypass or suppress it.
 
 ### Known site prefixes
 

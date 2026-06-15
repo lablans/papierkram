@@ -1,3 +1,4 @@
 .env
 __pycache__/
 tmp/
+.claude/skills/dkfz-sharepoint/uploads.log
