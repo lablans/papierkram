@@ -75,6 +75,19 @@ Procedure:
 
 This applies only to updates. A `create` (target does not exist) needs no comparison.
 
+### After a successful upload, do not re-verify
+
+`sp.py` exits non-zero (printing `Error: PUT returned <code>`) on failure and
+prints `Updated`/`Uploaded … (HTTP 200/201)` only on success. That success line
+**is** authoritative confirmation that SharePoint accepted the write — do **not**
+re-download the file to check it.
+
+A round-trip hash comparison is in fact misleading: SharePoint re-processes Office
+files on save (injecting document-management metadata into `customXml`/`docProps`),
+so the re-downloaded copy always has a different outer byte hash even when the
+content is byte-for-byte intact. The pre-upload content comparison (above) is the
+only content check needed.
+
 ### Known site prefixes
 
 | Server | Base URL |
