@@ -102,6 +102,21 @@ If the plugin is not installed, tell the user to install it:
 /plugin install document-skills@anthropic-agent-skills
 ```
 
+### Tracked changes and comments
+
+These documents are living drafts exchanged between partners. Tracked changes
+and comments are an ongoing debate about the text — whenever you read a document,
+take that debate into account rather than treating it as a single resolved
+reading.
+
+- Extract with `pandoc --track-changes=all` and read `word/comments.xml`.
+  (Pandoc's default silently accepts all changes, which hides the debate.)
+- Distinguish settled text from text under revision: note the relevant pending
+  insertions/deletions and comments, who made them, and how they bear on the
+  matter at hand.
+- When comparing two versions, compare with `--track-changes=all` — two files
+  that are identical once accepted can still differ in what is under discussion.
+
 ### Python package dependencies
 
 The document-skills plugin (and sp.py) require Python packages. If a package is missing, **do not find workarounds**: Just ask the user to install the package. Don't install it yourself.
