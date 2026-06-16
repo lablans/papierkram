@@ -30,7 +30,7 @@ deadline: 2026-06-16
 decision: ~
 
 # Direct costs requested in EUR (excl. overhead)
-amount_requested: 593175
+amount_requested: 481455
 
 # Project duration: calendar span and runtime in months
 period: 2026–2030
