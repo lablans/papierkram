@@ -21,7 +21,7 @@ role: PI
 status: proposal
 
 # Date the proposal was submitted (ISO date or ~ if not yet)
-submitted: ~
+submitted: 2026-06-16
 
 # Proposal submission deadline (~ if not applicable)
 deadline: 2026-06-16
@@ -34,7 +34,7 @@ amount_requested: ~  # budget tables are placeholders in the working document
 
 # Project duration: calendar span and runtime in months
 period: 2026–2031
-runtime_months: 54  # ? — milestones run to M48–M54
+runtime_months: 60  # submitted proposal (ID 101354962): "Duration in months 60"
 
 # Keywords
 tags: [generative-AI, agentic-AI, MCP, research-infrastructure, BBMRI, federated-access, life-sciences]
@@ -51,7 +51,7 @@ GenAI4RI proposes a next-generation, generative-AI digitalisation framework for 
 
 | Document | Type | File |
 |---|---|---|
-| Working Document (proposal draft) | DOCX | GenAI4RI_WorkingDocument.docx |
+| Submitted Proposal (Part A + B, ID 101354962) | PDF | GenAI4RI_Proposal.pdf |
 | Grants Office Checklist | DOCX | Checklist.docx |
 
 ⚠️ Missing required document: **Budget table** — required for all projects
@@ -62,5 +62,5 @@ GenAI4RI proposes a next-generation, generative-AI digitalisation framework for 
 ## Notes
 
 - Same call and deadline (2026-06-16) as COHESION: HORIZON-INFRA-2026-TECH-01.
-- Auto-extracted fields still to confirm: `period`, `runtime_months`, `amount_requested`.
-- The document is a working draft; the budget tables are empty placeholders and no budget XLSX is present yet.
+- Submitted 2026-06-16 (Proposal ID 101354962, by Sylvia Dyballa) via the Funding & Tenders Portal. The submitted PDF replaces the earlier working draft (`GenAI4RI_WorkingDocument.docx`), which is being removed from SharePoint.
+- Submitted proposal states duration = 60 months; `amount_requested` still to extract from Section 3 (Budget) of the submitted PDF. No standalone budget XLSX present.
