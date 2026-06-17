@@ -61,8 +61,27 @@ Documents for ongoing projects are located under `Management/Anträge/`.
 | Ressourcenbezogener Arbeitsplan | XLSX | Management/Anträge/2022_AZA/Anlage_5_Ressourcenbezogener_Arbeitsplan_2023bis2027.xlsx |
 | Institutional Endorsement | PDF | Management/Anträge/2022_Antrag_final/Befürwortung_PrivatAIM_112022.pdf |
 | Online Application (Profi) | PDF | Management/01ZZ2316O_profi-Online-Antrag 71000727.pdf |
-
-> ⚠️ Missing required document: **Grants office checklist** — required for all projects. No file matching "checklist" or "Checkliste" was found on SharePoint.
+| Finanzübersicht (review label) | PDF | Management/Anträge/2022_AZA/2_Finanzübersicht_PrivateAIM.pdf |
+| AZA Hinweise (review label) | PDF | Management/Anträge/2022_AZA/3_Hinweise_Erstellen_Formantrag.pdf |
+| VHB Anlage 1 (review label) | PDF | Management/Anträge/2022_AZA/Anlage_1_Deutsche_VHB_PrivateAIM_221026.pdf |
+| Reviewer Comments (review label) | PDF | Management/Anträge/2022_AZA/Anlage_3_PrivateAIM_Reviewer_Comments.docx.pdf |
+| Budget Calculation PDF (review label) | PDF | Management/Anträge/2022_AZA/Anlage_4_Berechnung_Personalausgaben_MII_2023bis2027.pdf |
+| AZA Information (review label) | DOCX | Management/Anträge/2022_AZA/Informationen AZA PrivateAIM.docx |
+| AZAP Entwurf (review label) | PDF | Management/Anträge/2022_AZA/PrivateAIM-AZAP-Entwurf.pdf |
+| AZAP Entwurf XML (review label) | XML | Management/Anträge/2022_AZA/PrivateAIM-AZAP-Entwurf.xml |
+| AZAP Final XML (review label) | XML | Management/Anträge/2022_AZA/PrivateAIM-AZAP-Final.xml |
+| Proposal without Appendix (review label) | PDF | Management/Anträge/2022_AZA/Proposal-PrivateAIM-ohne_Anhang.pdf |
+| Subventionsbelehrung (review label) | PDF | Management/Anträge/2022_AZA/Subventionsbelehrung C.pdf |
+| AZA Template UMM (review label) | DOCX | Management/Anträge/2022_AZA/Template_AZA_UMM_PrivateAIM.docx |
+| Letter of Commitment (review label) | PDF | Management/Anträge/2022_Antrag_Vorbereitungen/2022_03_21_loc_PrivateAIM.pdf |
+| Proposal Draft (review label) | PDF | Management/Anträge/2022_Antrag_Vorbereitungen/A_B_PrivateAIM.pdf |
+| Partner Description UMM (review label) | DOCX | Management/Anträge/2022_Antrag_Vorbereitungen/B_DescriptionOfPartners_UMM.docx |
+| Budget Mannheim Draft (review label) | XLSX | Management/Anträge/2022_Antrag_Vorbereitungen/Budget Mannheim.xlsx |
+| CV Lablans (review label) | DOCX | Management/Anträge/2022_Antrag_Vorbereitungen/CV_Lablans.docx |
+| Financial Plan Extension (review label) | PDF | Management/Anträge/2022_Antrag_Vorbereitungen/Financial_Plan_Ausbau-Erweiterung.xlsx - Financial table.pdf |
+| Proposal Sections Mannheim (review label) | DOCX | Management/Anträge/2022_Antrag_Vorbereitungen/General Proposal Sections Mannheim.docx |
+| DIC Description Mannheim (review label) | DOCX | Management/Anträge/2022_Antrag_Vorbereitungen/Mannheim DIC Description and Compute Resources.docx |
+| TVB UMM (review label) | DOCX | Management/Anträge/2022_Antrag_Vorbereitungen/TVB_PrivateAIM_UMM.docx |
 
 ## Key Contacts
 

@@ -54,6 +54,9 @@ GenAI4RI proposes a next-generation, generative-AI digitalisation framework for 
 | Working Document (proposal draft) | DOCX | GenAI4RI_WorkingDocument.docx |
 | Grants Office Checklist | DOCX | Checklist.docx |
 
+⚠️ Missing required document: **Budget table** — required for all projects
+⚠️ Missing required document: **Part A (applicant info)** — required because funder is EC
+
 ## Key Contacts
 
 ## Notes
