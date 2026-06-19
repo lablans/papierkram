@@ -67,6 +67,7 @@ LSRI Amplify will strengthen and integrate Europe's Life Science Research Infras
 | Checklist EN (signed) | PDF | Checklist_EN_LSRI-Amplify_sign.pdf |
 | Proposal Draft | DOCX | LSRI-AMPLIFY (INFRA-DEV-02) Proposal Draft.docx |
 | Partner Info | DOCX | LSRI-Amplify-Partner.docx |
+| Consortium Contact List | XLSX | Consortium.xlsx |
 
 ## Key Contacts
 
