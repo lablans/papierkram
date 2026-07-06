@@ -90,3 +90,6 @@ Documents for ongoing projects are located under `Management/Anträge/`.
 - Platform name: FLAME (Federated Learning and Analytics in Medicine)
 - Consortium: 16 partners (Charité, CISPA, DKFZ, EKUT, LMU, TMF, TUM, UKER, UKFR, UKHD, UKK, UKL, UKT, UKU, UMM, UKE)
 - `amount_requested` covers UMM personnel costs only (43.5 PM); travel (~8,000 EUR) excluded
+- Bewilligungszeitraum (from Zuwendungsbescheid `ZB_01ZZ2316O_230321.pdf`, dated 21.03.2023): **01.04.2023 – 31.03.2027** (M1 = April 2023; 48 months). Förderkennzeichen 01ZZ2316O.
+- UMM tasks (Part B work plan): **Task 3.1** — unified federated analysis platform, SMPC tools, central zero-knowledge broker, method-agnostic PPRL middleware (MainSEL + PHT connectors, open-source) (24 PM); **Task 4.4** — productive roll-out, establish FLAME node at Medical Faculty Mannheim on the Digital Research Environment (DRE), plus reviewer role (12 PM).
+- Roll-out milestone **M4.4** (roll-out at all PrivateAIM DICs, incl. UMM node) is due **M48 → 31.03.2027** (WP4 chain: M4.1 M18 / M4.2 M24 / M4.3 M36 / M4.4 M48).
