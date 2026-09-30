@@ -101,19 +101,12 @@ SharePoint's built-in versioning is the only versioning mechanism — files keep
 
 ### Reading or working with downloaded files
 
-**Always** use the `document-skills` plugin for working with DOCX, XLSX, PPTX, and PDF files:
+**Always** use these skills for working with DOCX, XLSX, PPTX, and PDF files:
 
-- XLSX / CSV → `Skill("xlsx")`
-- DOCX → `Skill("docx")`
-- PDF → `Skill("pdf")`
-- PPTX → `Skill("pptx")`
-
-If the plugin is not installed, tell the user to install it:
-
-```
-/plugin marketplace add anthropics/skills
-/plugin install document-skills@anthropic-agent-skills
-```
+- XLSX / CSV → `Skill("anthropic-skills:xlsx")`
+- DOCX → `Skill("anthropic-skills:docx")`
+- PDF → `Skill("anthropic-skills:pdf")`
+- PPTX → `Skill("anthropic-skills:pptx")`
 
 ### Tracked changes and comments
 
@@ -132,7 +125,7 @@ reading.
 
 ### Python package dependencies
 
-The document-skills plugin (and sp.py) require Python packages. If a package is missing, **do not find workarounds**: Just ask the user to install the package. Don't install it yourself.
+The document skills (and sp.py) require Python packages. If a package is missing, **do not find workarounds**: Just ask the user to install the package. Don't install it yourself.
 
 ## Project Repository Layout
 

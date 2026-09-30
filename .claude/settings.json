@@ -17,8 +17,5 @@
         ]
       }
     ]
-  },
-  "enabledPlugins": {
-    "document-skills@anthropic-agent-skills": true
   }
 }
