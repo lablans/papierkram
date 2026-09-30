@@ -59,7 +59,7 @@ List the SharePoint folder using `sp.py --list <sharepoint_folder>`. Identify th
 **Run document completeness check now** — apply the Required Documents rules above to the listing. Emit a warning for every required document not found in the listing before proceeding. Do not skip this even if the document table looks complete at a glance.
 
 **Step 3 — Extract proposal text.**
-Download the main proposal document to `tmp/` via `sp.py`. Extract its text using existing skills to read pdf and microsoft office files.
+Download the main proposal document to the session scratchpad via `sp.py`. Extract its text using existing skills to read pdf and microsoft office files.
 
 **Step 4 — Generate frontmatter and summary.**
 From the extracted text, derive:

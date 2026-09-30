@@ -34,16 +34,12 @@ pip install requests requests-ntlm beautifulsoup4 --break-system-packages
 
 ### Download a file
 
-```bash
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/GBA/.../file.docx"
-```
+Always download into the session scratchpad directory (its path is given in Claude's system prompt; written `<scratchpad>` here) via `-o`, which is required for downloads (`sp.py` refuses without it). Missing parent directories of `-o` are created.
 
-With explicit output path:
 ```bash
 python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/.../file.docx" \
-  -o /tmp/file.docx
+  -o <scratchpad>/file.docx
 ```
 
 ### List a directory
@@ -71,7 +67,7 @@ The current (latest) version is prefixed with `@` (e.g. `@2.0`).
 python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
   --version 1.0 \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx" \
-  -o /tmp/cohesion_v1.docx
+  -o <scratchpad>/cohesion_v1.docx
 ```
 
 The `--version` flag accepts the version label shown by `--versions` (e.g. `1.0`, `2.0`).
@@ -83,7 +79,7 @@ Use `Bash` with the commands above. After download, use `Read` or `Bash` to insp
 ```bash
 python3 -c "
 import zipfile, re
-with zipfile.ZipFile('/tmp/file.docx') as z:
+with zipfile.ZipFile('<scratchpad>/file.docx') as z:
     xml = z.read('word/document.xml').decode()
     text = re.sub(r'<[^>]+>', ' ', xml)
     text = re.sub(r' +', ' ', text)
@@ -107,8 +103,8 @@ python3 ~/.claude/skills/dkfz-sharepoint/sp.py --list \
 # Download
 python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/GBA/GBN_21-23/Management/Berichte/Abschlussbericht%202026/GBN_01EY2001D_IT_Abschlussbericht.docx" \
-  -o /tmp/test.docx
-# → Saved 78,990 bytes → /tmp/test.docx
+  -o <scratchpad>/test.docx
+# → Saved 78,990 bytes → <scratchpad>/test.docx
 
 # Version history
 python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \

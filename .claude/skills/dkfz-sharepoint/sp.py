@@ -354,11 +354,9 @@ def cmd_download(url, output, username, password, version_label=None):
         print(f"Error: {r.status_code}", file=sys.stderr)
         sys.exit(1)
 
-    if not output:
-        output = unquote(urlparse(url).path.rstrip("/").split("/")[-1])
-    if not output:
-        output = "download"
-
+    out_dir = os.path.dirname(output)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     with open(output, "wb") as f:
         f.write(r.content)
 
@@ -517,6 +515,17 @@ def main():
         help="Allow upload to an existing file (adds a new version); else create-only",
     )
     args = p.parse_args()
+
+    is_download = not (args.upload or args.versions or args.list or args.url.endswith("/"))
+    if is_download and not args.output:
+        name = unquote(urlparse(args.url).path.rstrip("/").split("/")[-1]) or "download"
+        print(
+            "Error: downloads require an explicit output path.\n"
+            f"       Re-run with -o <scratchpad>/{name}, where <scratchpad> is the\n"
+            "       session scratchpad directory given in Claude's system prompt.",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     username, password = get_credentials()
 

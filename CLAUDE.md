@@ -25,10 +25,12 @@ python3 .claude/skills/dkfz-sharepoint/sp.py --list "https://webcoop.inet.dkfz-h
 # Download a file
 python3 .claude/skills/dkfz-sharepoint/sp.py \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/somefile.docx" \
-  -o tmp/somefile.docx
+  -o <scratchpad>/somefile.docx
 ```
 
 A URL ending in `/` triggers listing automatically.
+
+Download into the session scratchpad directory (its path is given in Claude's system prompt; written `<scratchpad>` here) — never into the repo. `sp.py` refuses to download without `-o`.
 
 ### Uploading files (guarded write path)
 
@@ -38,7 +40,7 @@ Uploading is the only operation that writes to SharePoint. It is deliberately ga
 # Dry run (default): reports source, size, sha256, destination, whether the
 # target exists, and create-vs-update. Sends NOTHING.
 python3 .claude/skills/dkfz-sharepoint/sp.py \
-  --upload tmp/PartA.pdf \
+  --upload <scratchpad>/PartA.pdf \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/BBMRI-IMPACT/Part A.pdf"
 
 # Actually transmit (creates a new file):
@@ -66,7 +68,7 @@ When a dry run reports `action: update` (the destination already exists), **do n
 
 Procedure:
 
-1. Download the existing remote file to `tmp/` (e.g. `tmp/<name>_remote.docx`).
+1. Download the existing remote file to the scratchpad (e.g. `<scratchpad>/<name>_remote.docx`).
 2. Compare against the local source. A differing `sha256` is **not** sufficient to conclude the content changed for zip-based Office formats. Compare *content*:
    - Office formats (`.docx`, `.xlsx`, `.pptx`) are ZIP archives — unzip both and `diff -rq` the unpacked trees. If every internal part is identical, the content is unchanged regardless of the outer hash.
    - For a quick text check, also `pandoc … -o` both and `diff` the output, but treat the unpacked-tree comparison as authoritative.
@@ -97,7 +99,7 @@ only content check needed.
 
 ### Versioning
 
-SharePoint's built-in versioning is the only versioning mechanism — files keep their canonical filename on SharePoint. Never upload or instruct the user to save `_v1`, `_v2`, `_old`, etc. suffixed copies to SharePoint. If the user does this, tell them off and remind them to delete the duplicates. Locally (e.g. `tmp/`), use `_v1`/`_v2` suffixes matching the SharePoint version label when downloading multiple versions for comparison.
+SharePoint's built-in versioning is the only versioning mechanism — files keep their canonical filename on SharePoint. Never upload or instruct the user to save `_v1`, `_v2`, `_old`, etc. suffixed copies to SharePoint. If the user does this, tell them off and remind them to delete the duplicates. Locally (e.g. in the scratchpad), use `_v1`/`_v2` suffixes matching the SharePoint version label when downloading multiple versions for comparison.
 
 ### Reading or working with downloaded files
 
@@ -236,7 +238,7 @@ needed:
 # sharepoint_folder + File → live URL
 python3 .claude/skills/dkfz-sharepoint/sp.py \
   "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/Budget.xlsx" \
-  -o tmp/Budget.xlsx
+  -o <scratchpad>/Budget.xlsx
 ```
 
 The table is a cache of the live folder. Treat it as a snapshot to be re-validated, not
@@ -285,7 +287,7 @@ Invoke the `add-project` skill.
 
 For cross-project questions ("what projects are due this year?"), read `projects/README.md` and all `index.md` frontmatter — no SharePoint fetch needed.
 
-For project-specific content questions, read `projects/<folder>/index.md`, reconstruct the document URL by concatenating `sharepoint_folder` with the relative `File` value, download the most relevant document to `tmp/` via `sp.py`, and answer citing the section. Route by type: science/approach → proposal PDF/DOCX; budget/costs → budget XLSX; timeline/milestones → work-plan section. If the answer is not in the first document, try the next most relevant file before saying it's unavailable.
+For project-specific content questions, read `projects/<folder>/index.md`, reconstruct the document URL by concatenating `sharepoint_folder` with the relative `File` value, download the most relevant document to the scratchpad via `sp.py`, and answer citing the section. Route by type: science/approach → proposal PDF/DOCX; budget/costs → budget XLSX; timeline/milestones → work-plan section. If the answer is not in the first document, try the next most relevant file before saying it's unavailable.
 
 ### Verifying a project
 
