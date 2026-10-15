@@ -26,13 +26,14 @@ def _build_reason(cmd):
     present means an update (new version), absent means a new file.
     """
     action = "Update" if _UPDATE_RE.search(cmd) else "Create"
-    m = _URL_RE.search(cmd)
+    # The destination is the last URL: an earlier one may be a DKFZ_SP_WRITE_ALLOW_PREFIXES override.
+    urls = _URL_RE.findall(cmd)
 
-    if not m:
+    if not urls:
         return ("SharePoint write (sp.py --confirm): verify the destination, "
                 "create-vs-update, and filename before approving.")
 
-    p = urlparse(m.group(0))
+    p = urlparse(urls[-1])
     host = (p.hostname or "").split(".")[0] or p.netloc
     segments = [s for s in unquote(p.path).split("/") if s]
     filename = segments[-1] if segments else unquote(p.path)
