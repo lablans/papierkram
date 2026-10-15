@@ -361,6 +361,17 @@ def cmd_download(url, output, username, password, version_label=None):
         f.write(r.content)
 
     print(f"Saved {len(r.content):,} bytes → {output}")
+    # D10: remember which server version this copy is, for a later --update --base <output>.
+    etag = r.headers.get("ETag")
+    if etag and not version_label:
+        with open(output + ".etag", "w") as f:
+            f.write(etag)
+        print(f"ETag {etag} → {output}.etag")
+
+
+def _current_etag(sess, url):
+    """The file's current ETag on SharePoint (changes with every save), or None."""
+    return sess.head(url, allow_redirects=True).headers.get("ETag")
 
 
 def _target_status(sess, url):
@@ -377,7 +388,7 @@ def _target_status(sess, url):
     return r.status_code
 
 
-def cmd_upload(local_path, url, username, password, confirm=False, update=False):
+def cmd_upload(local_path, url, username, password, confirm=False, update=False, base=None):
     """Upload a local file to SharePoint via WebDAV PUT, behind safeguards.
 
     D1 this is a separate, explicit mode (never inferred).
@@ -385,6 +396,9 @@ def cmd_upload(local_path, url, username, password, confirm=False, update=False)
     D3 create-only by default; updating an existing file requires --update.
     D4 destination must lie under an allowed write prefix.
     D9 every actual attempt is appended to the audit log.
+    D10 no lost updates: an update requires --base (the download the edit started from) and is sent with
+        If-Match: <its ETag>, so SharePoint refuses it (412) if anyone saved in between; a create is sent
+        with If-None-Match: *, so it never overwrites a file that appeared in between.
     """
     sp_host = sp_host_from_url(url)
 
@@ -437,6 +451,24 @@ def cmd_upload(local_path, url, username, password, confirm=False, update=False)
     print(f"  destination  : {url}")
     print(f"  target exists: {'YES' if exists else 'no'}")
     print(f"  action       : {action}")
+
+    # D10
+    precondition = {"If-None-Match": "*"}
+    if exists:
+        if not base or not os.path.isfile(base + ".etag"):
+            print("------------------------------------------------------------------")
+            print(
+                "Error: updating requires --base <file>, the download your edit started from\n"
+                "       (sp.py stores its ETag as <file>.etag), so a newer version is never overwritten.",
+                file=sys.stderr,
+            )
+            sys.exit(3)
+        with open(base + ".etag") as f:
+            base_etag = f.read().strip()
+        now = _current_etag(sess, url)
+        precondition = {"If-Match": base_etag}
+        print(f"  base version : {base_etag}  ({base})")
+        print(f"  remote now   : {now}  ({'unchanged' if now == base_etag else 'CHANGED since that download'})")
     print("------------------------------------------------------------------")
 
     # D2: dry-run unless --confirm.
@@ -456,7 +488,7 @@ def cmd_upload(local_path, url, username, password, confirm=False, update=False)
     # Transmit (retry once on 403).
     for attempt in range(2):
         sess = _get_session(sp_host, username, password, force=(attempt > 0))
-        r = sess.put(url, data=data)
+        r = sess.put(url, data=data, headers=precondition)
         if r.status_code == 403 and attempt == 0:
             continue
         break
@@ -470,10 +502,19 @@ def cmd_upload(local_path, url, username, password, confirm=False, update=False)
         "size": size,
         "destination": url,
         "existed": exists,
+        "precondition": precondition,
         "status": r.status_code,
         "result": "ok" if ok else "error",
     })
 
+    if r.status_code == 412:
+        print(
+            "Error: PUT returned 412 — the file changed on SharePoint since your --base download (or, for a\n"
+            "       create, it appeared in the meantime). Nothing was written. Download the current version\n"
+            "       and redo your changes on it.",
+            file=sys.stderr,
+        )
+        sys.exit(5)
     if not ok:
         print(f"Error: PUT returned {r.status_code}", file=sys.stderr)
         sys.exit(1)
@@ -514,6 +555,12 @@ def main():
         "--update", action="store_true",
         help="Allow upload to an existing file (adds a new version); else create-only",
     )
+    p.add_argument(
+        "--base",
+        metavar="FILE",
+        help="With --update: the download your edit started from; the upload is refused if the "
+             "file changed on SharePoint since then (uses FILE.etag written by the download)",
+    )
     args = p.parse_args()
 
     is_download = not (args.upload or args.versions or args.list or args.url.endswith("/"))
@@ -532,7 +579,7 @@ def main():
     if args.upload:
         cmd_upload(
             args.upload, args.url, username, password,
-            confirm=args.confirm, update=args.update,
+            confirm=args.confirm, update=args.update, base=args.base,
         )
     elif args.versions:
         cmd_versions(args.url, username, password)

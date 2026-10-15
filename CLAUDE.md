@@ -45,8 +45,9 @@ python3 .claude/skills/dkfz-sharepoint/sp.py \
 
 # Actually transmit (creates a new file):
 #   ... --confirm
-# Update an EXISTING file (adds a new SharePoint version):
-#   ... --confirm --update
+# Update an EXISTING file (adds a new SharePoint version); --base is the download
+# your edit started from (its ETag is in <file>.etag, written by the download):
+#   ... --confirm --update --base <scratchpad>/PartA_remote.pdf
 ```
 
 Safeguards (do not work around them):
@@ -54,6 +55,7 @@ Safeguards (do not work around them):
 - **Dry-run is the default.** Nothing is transmitted without `--confirm`. Always run the dry run first and show its output to the user.
 - **Create-only by default.** Uploading onto an existing file requires `--update` (which adds a new SharePoint version — never a `_v2` duplicate; see Versioning).
 - **Write-path allowlist.** Uploads are refused unless the destination is under an allowed prefix (default `…/sites/verbis/pantr/`; override via `DKFZ_SP_WRITE_ALLOW_PREFIXES`, comma-separated). For a destination whose path contains a comma, set the narrowest parent prefix without one, for that single command only.
+- **No lost updates.** An update is sent with `If-Match: <ETag of the --base download>`, a create with `If-None-Match: *`. If anyone saved the file in the meantime, SharePoint refuses the write (412, exit 5) and nothing is written. The dry run already shows whether the remote file is unchanged since the base download.
 - **Audit log.** Every actual upload attempt is appended to `.claude/skills/dkfz-sharepoint/uploads.log` (gitignored).
 
 **Policy — never write without explicit, specific authorization:**
@@ -62,9 +64,9 @@ Safeguards (do not work around them):
 - One approval is never standing approval — confirm again for each new upload.
 - The `--confirm` invocation always triggers an approval prompt via a deterministic PreToolUse hook (`.claude/hooks/sp_upload_guard.py`), whose message names the destination and whether the write creates or updates a file. Do not attempt to bypass or suppress it.
 
-### Check the remote file is unchanged before updating it
+### When the file changed on SharePoint in the meantime
 
-The user may be editing the file in Word while you work on a copy. Right before every `--confirm --update`, download the remote file again and compare its sha256 with the version your local edit is based on. If it differs, do not upload: tell the user, wait until they have saved and closed it, then redo your changes on their new version.
+Others may edit the file in Word while you work on a copy. If the dry run reports `CHANGED since that download`, or the upload fails with 412: do not retry. Tell the user, wait until the other person has saved and closed the file, then download it again and redo your changes on the new version.
 
 ### Compare before updating an existing file
 
