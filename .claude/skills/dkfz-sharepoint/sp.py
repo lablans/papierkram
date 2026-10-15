@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
-"""Fetch files from DKFZ SharePoint (webcoop / intracoop) via ADFS auth."""
+"""Fetch files from DKFZ SharePoint (webcoop / intracoop) via ADFS auth.
+
+Authentication: the SP-initiated WS-Federation passive flow.
+  1. GET the ADFS login form at feds.dkfz-heidelberg.de/adfs/ls/ with the SharePoint realm
+     (derived from the first hostname component: webcoop -> urn:sharepoint:webcoop).
+  2. POST the credentials; ADFS returns a `wresult` form.
+  3. POST `wresult` to SharePoint /_trust/default.aspx -> FedAuth cookie.
+  4. Use FedAuth for all further requests (REST API and WebDAV).
+The cookie is cached per user in CACHE_DIR (private: 0700/0600) across processes; on a 403 the cache is
+dropped and a fresh login happens automatically.
+
+Why not something simpler (all tried):
+  - The username must be `AD\\<user>`; `<user>@dkfz-heidelberg.de` fails with "ID or password incorrect".
+  - WS-Trust endpoints are unusable: usernamemixed returns ID3242, windowsmixed returns 503.
+  - NTLM alone authenticates only at the IIS level (userId=0 in the SP page context); SharePoint itself
+    uses the ADFS claims identity.
+  - rclone `vendor=sharepoint` targets Microsoft Online and times out on the internal network.
+
+Downloads write `<output>.etag`, the server version (ETag) of the copy; `--upload --update --base <output>`
+sends it as If-Match, so SharePoint refuses the upload with 412 if the file was saved in between (D10).
+"""
 import sys; sys.dont_write_bytecode = True
 
 set_euo = None  # Python equivalent: errors exit immediately via sys.exit

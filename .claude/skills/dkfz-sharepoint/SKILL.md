@@ -6,120 +6,27 @@ description: >
   files on DKFZ SharePoint / webcoop / intracoop.
 ---
 
-# DKFZ SharePoint Fetch
+# DKFZ SharePoint
 
-Driver: `$GITREPO/.claude/skills/dkfz-sharepoint/sp.py`, lives within the `papierkram` git repo.
-Auth: ADFS form-based via `feds.dkfz-heidelberg.de`; credentials from `rbw` (UUID supplied by user in .env file or env var).
+Tool: `python3 .claude/skills/dkfz-sharepoint/sp.py` (in this repo; `--help` lists all options). Credentials come from `rbw`; if it is locked, ask the user to run `! rbw unlock`.
 
-## How it works
-
-Authentication uses the SP-initiated WS-Federation passive flow:
-1. GET ADFS login form at `feds.dkfz-heidelberg.de/adfs/ls/` with the SharePoint realm
-2. POST credentials (`AD\<user>` + password) — ADFS returns a `wresult` form
-3. POST `wresult` to SharePoint `/_trust/default.aspx` → `FedAuth` cookie
-4. Use `FedAuth` for all subsequent requests (REST API or WebDAV)
-
-Supported hosts:
-- `webcoop.inet.dkfz-heidelberg.de`: Files are always in `https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/`
-- `intracoop.dkfz-heidelberg.de`: Files are always in `https://intracoop.dkfz-heidelberg.de/sites/verbis-int/`
-
-## Prerequisites
-
-```bash
-pip install requests requests-ntlm beautifulsoup4 --break-system-packages
-```
-(`requests_ntlm` is already installed; `beautifulsoup4` was installed during skill creation.)
+Files live under `https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/` and `https://intracoop.dkfz-heidelberg.de/sites/verbis-int/`.
 
 ## Usage
 
-### Download a file
-
-Always download into the session scratchpad directory (its path is given in Claude's system prompt; written `<scratchpad>` here) via `-o`, which is required for downloads (`sp.py` refuses without it). Missing parent directories of `-o` are created.
-
 ```bash
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/.../file.docx" \
-  -o <scratchpad>/file.docx
+# Download (-o is required; always into the session scratchpad). Also writes <output>.etag,
+# the server version the copy came from, for a later upload with --base.
+sp.py "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/.../file.docx" -o <scratchpad>/file.docx
+
+# List a folder (a URL ending in / lists automatically)
+sp.py --list "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/.../"
+
+# Version history (the current version is marked @), and download of one version
+sp.py --versions "https://…/file.docx"
+sp.py --version 1.0 "https://…/file.docx" -o <scratchpad>/file_v1.docx
 ```
 
-### List a directory
+Uploads (`--upload`, dry run unless `--confirm`; updates need `--update --base <download>`) follow the upload policy in the repo's CLAUDE.md.
 
-```bash
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py --list \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/GBA/GBN_21-23/Management/Berichte/Abschlussbericht%202026/"
-```
-
-A URL ending in `/` also triggers listing automatically.
-
-### Show version history of a file
-
-```bash
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx"
-```
-
-Prints each version with its label, creation timestamp, byte size, and author.
-The current (latest) version is prefixed with `@` (e.g. `@2.0`).
-
-### Download a specific version
-
-```bash
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
-  --version 1.0 \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx" \
-  -o <scratchpad>/cohesion_v1.docx
-```
-
-The `--version` flag accepts the version label shown by `--versions` (e.g. `1.0`, `2.0`).
-
-### From Claude Code (typical agent use)
-
-Use `Bash` with the commands above. After download, use `Read` or `Bash` to inspect content. For DOCX files, extract text with:
-
-```bash
-python3 -c "
-import zipfile, re
-with zipfile.ZipFile('<scratchpad>/file.docx') as z:
-    xml = z.read('word/document.xml').decode()
-    text = re.sub(r'<[^>]+>', ' ', xml)
-    text = re.sub(r' +', ' ', text)
-    print(text[:5000])
-"
-```
-
-## Verified examples
-
-These commands were run and worked:
-
-```
-# List
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py --list \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/GBA/GBN_21-23/Management/Berichte/Abschlussbericht%202026/"
-# → [dir] Abschlussbericht 2026/
-# → [file] GBN_01EY2001D_IT_Abschlussbericht.docx  (78990 bytes)
-# → [file] Kurzbericht.docx  (52812 bytes)
-# → ...
-
-# Download
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/GBA/GBN_21-23/Management/Berichte/Abschlussbericht%202026/GBN_01EY2001D_IT_Abschlussbericht.docx" \
-  -o <scratchpad>/test.docx
-# → Saved 78,990 bytes → <scratchpad>/test.docx
-
-# Version history
-python3 ~/.claude/skills/dkfz-sharepoint/sp.py --versions \
-  "https://webcoop.inet.dkfz-heidelberg.de/sites/verbis/pantr/2026/COHESION/COHESION_full.docx"
-# → Version    Created                        Size  Created By
-# → ---------------------------------------------------------------------------
-# → @2.0       09.06.2026 16:34          2,059,281  t264l@dkfz.de
-# → 1.0        09.06.2026 16:33          2,059,281  t264l@dkfz.de
-```
-
-## Gotchas
-
-- **Username format must be `AD\<user>`**, not `<user>@dkfz-heidelberg.de` — the latter fails at the ADFS login form with "ID or password incorrect"
-- **WS-Trust usernamemixed/windowsmixed endpoints are not usable** — usernamemixed returns ID3242, windowsmixed returns 503. Use the form-based passive flow (what this skill does).
-- **NTLM alone isn't enough** — NTLM authenticates at the IIS level (userId=0 in SP page context) but SharePoint itself uses ADFS claims identity. You must go through the ADFS form flow.
-- **rclone `vendor=sharepoint` hits Microsoft Online** — times out on the internal network; not usable for on-prem.
-- **Realm is derived from the first hostname component**: `webcoop` → `urn:sharepoint:webcoop`, `intracoop` → `urn:sharepoint:intracoop`
-- **FedAuth cookie is cached to disk** — saved in `/tmp/papierkram/fedauth_<host>.json` and reused across processes. On a 403, the cache is busted and a fresh token is fetched automatically.
+To read downloaded Office files, use the document skills named in CLAUDE.md.
