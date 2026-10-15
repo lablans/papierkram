@@ -18,7 +18,9 @@ import xml.etree.ElementTree as ET
 
 ADFS_HOST = "https://feds.dkfz-heidelberg.de"
 RBW_UUID = os.environ.get("DKFZ_SP_RBW_UUID")
-CACHE_DIR = "/tmp/papierkram"
+# holds a login cookie
+CACHE_DIR = (os.path.join(os.environ["XDG_RUNTIME_DIR"], "papierkram") if os.environ.get("XDG_RUNTIME_DIR")
+             else f"/tmp/papierkram-{os.getuid()}")
 SUPPORTED_HOSTS = {
     "webcoop",
     "webcoop.inet.dkfz-heidelberg.de",
@@ -58,7 +60,18 @@ def _cache_path(sp_host):
     return os.path.join(CACHE_DIR, f"fedauth_{key}.json")
 
 
+def _cache_dir_private():
+    """True if CACHE_DIR is ours and closed to others (a pre-created /tmp directory could be neither)."""
+    try:
+        st = os.stat(CACHE_DIR)
+    except FileNotFoundError:
+        return False
+    return st.st_uid == os.getuid() and not st.st_mode & 0o077
+
+
 def _load_cached_session(sp_host):
+    if not _cache_dir_private():
+        return None
     try:
         with open(_cache_path(sp_host)) as f:
             data = json.load(f)
@@ -73,8 +86,11 @@ def _save_session_cache(sp_host, session):
     cookie = session.cookies.get("FedAuth")
     if not cookie:
         return
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    with open(_cache_path(sp_host), "w") as f:
+    os.makedirs(CACHE_DIR, mode=0o700, exist_ok=True)
+    if not _cache_dir_private():
+        return
+    fd = os.open(_cache_path(sp_host), os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "w") as f:
         json.dump({"FedAuth": cookie}, f)
 
 
