@@ -53,7 +53,7 @@ Safeguards (do not work around them):
 
 - **Dry-run is the default.** Nothing is transmitted without `--confirm`. Always run the dry run first and show its output to the user.
 - **Create-only by default.** Uploading onto an existing file requires `--update` (which adds a new SharePoint version — never a `_v2` duplicate; see Versioning).
-- **Write-path allowlist.** Uploads are refused unless the destination is under an allowed prefix (default `…/sites/verbis/pantr/`; override via `DKFZ_SP_WRITE_ALLOW_PREFIXES`).
+- **Write-path allowlist.** Uploads are refused unless the destination is under an allowed prefix (default `…/sites/verbis/pantr/`; override via `DKFZ_SP_WRITE_ALLOW_PREFIXES`, comma-separated). For a destination whose path contains a comma, set the narrowest parent prefix without one, for that single command only.
 - **Audit log.** Every actual upload attempt is appended to `.claude/skills/dkfz-sharepoint/uploads.log` (gitignored).
 
 **Policy — never write without explicit, specific authorization:**
@@ -61,6 +61,10 @@ Safeguards (do not work around them):
 - Only run `--confirm` when the user has explicitly asked to upload *that file* to *that destination*. Showing the dry run does not by itself authorize the write.
 - One approval is never standing approval — confirm again for each new upload.
 - The `--confirm` invocation always triggers an approval prompt via a deterministic PreToolUse hook (`.claude/hooks/sp_upload_guard.py`), whose message names the destination and whether the write creates or updates a file. Do not attempt to bypass or suppress it.
+
+### Check the remote file is unchanged before updating it
+
+The user may be editing the file in Word while you work on a copy. Right before every `--confirm --update`, download the remote file again and compare its sha256 with the version your local edit is based on. If it differs, do not upload: tell the user, wait until they have saved and closed it, then redo your changes on their new version.
 
 ### Compare before updating an existing file
 
